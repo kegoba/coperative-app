@@ -25,6 +25,8 @@ app.use(express.json());
 
 app.use("/api/v1/user", require("./routes/userRoute"));
 
+app.use("/api/v1/wallet", require("./routes/walletRoute"));
+
 app.use("/api/v1/admin", require("./routes/adminRoute"));
 
 //app.use("/api/v1", require("./routes/consultationRoute"));

@@ -1,5 +1,5 @@
 const route = require('express').Router()
-const {authenticate, authorizeAdmin} = require('../middlewares/authenticate');
+const {checkAuthentication,  checkAuthorization} = require('../middlewares/authenticate');
 const adminController = require('../controllers/adminController')
 
 
@@ -10,10 +10,10 @@ const adminController = require('../controllers/adminController')
 
 
 
-route.post('/createadmin',authenticate, adminController.registerAdmin) 
-route.post('/approveloan/:id', authenticate, adminController.loanRequestAproval)  
-route.post('/rejectloan/:id', authenticate, adminController.loanRequestReject)
-route.get('/alloan', authenticate, adminController.getAllLoanRequest)
+route.post('/createadmin',checkAuthentication, adminController.registerAdmin) 
+route.post('/approveloan/:id', checkAuthentication, adminController.loanRequestAproval)  
+route.post('/rejectloan/:id', checkAuthentication, adminController.loanRequestReject)
+route.get('/alloan', checkAuthentication, adminController.getAllLoanRequest)
 route.delete('/deleteall', adminController.deleteAllUser)
 
 

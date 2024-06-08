@@ -2,6 +2,7 @@
 const mongoose = require("mongoose");
 
 const UserSchema = mongoose.Schema({
+  date: { type: Date, default: Date.now },
   name: { type: String, required: true, },
   email: { type: String, required: true,unique: true },
   address: { type: String },
@@ -14,32 +15,34 @@ const UserSchema = mongoose.Schema({
 const loanSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   amount: { type: Number, required: true },
-  interestRate: { type: Number, required: true },
-  duration: { type: Number, required: true }, // Duration in months
+  interest: { type: Number, required: true },
+  duration: { type: Number, required: true },
+  date: { type: Date, default: Date.now }, // Duration in months
+  loanReference : {
+    type : [String],
+    default : []
+  },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
 }, { timestamps: true });
 
 
 const savingsSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  amount: { type: Number, required: true },
-  interestRate: { type: Number, required: true },
-  createdAt: { type: Date, default: Date.now },
-}, { timestamps: true });
-
-
-const interestEarnedSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  amount: { type: Number, required: true },
-  savingsId: { type: mongoose.Schema.Types.ObjectId, ref: 'Savings', required: true },
-  calculatedAt: { type: Date, default: Date.now },
+  balance: { type: Number, default : 0},
+  interest: { type: Number, default : 0 },
+  date: { type: Date, default: Date.now },
+  paymentReference: {
+    type: [String], // Array of strings
+    default: [],
+  },
 }, { timestamps: true });
 
 
 
 
 
-const InterestEarned = mongoose.model('InterestEarned', interestEarnedSchema);
+
+
 
 const Savings = mongoose.model('Savings', savingsSchema);
 
@@ -51,7 +54,7 @@ module.exports = {
   User,
   Loan,
   Savings,
-  InterestEarned
+
 
 }
 
