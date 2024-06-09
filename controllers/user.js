@@ -93,8 +93,8 @@ const loginUser = async (req, res) => {
       name: user.name,
       email: user.email,
       id: user._id,
-      balance: wallet.balance,
-      interest : wallet.interest,
+      //balance: wallet.balance,
+      //interest : wallet.interest,
     };
 
     res.status(200).json({ data });
