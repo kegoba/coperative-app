@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const {User,Savings} = require('../models/model');
+const {User,Savings,TransactionHistory} = require('../models/model');
 const { acceptPayment , verifyPayment} = require("../services/paymentService")
 const {handleNotification} = require("../helpFunction/notificationService")
 const crypto = require('crypto');
@@ -112,14 +112,19 @@ const verifyAndCredit = async (req,res)=>{
 
 
 
+
+
 const handleWebHook = async (req, res) => {
   try {
+    const PAYSTACK_KEY = process.env.PAYSTACK_KEY;
+    const PAYSTACK_SIGNATURE_HEADER = 'x-paystack-signature';
+
     // Verify Paystack signature
-    const hash = crypto.createHmac('sha512', process.env.PAYSTACK_KEY)
+    const hash = crypto.createHmac('sha512', PAYSTACK_KEY)
       .update(JSON.stringify(req.body))
       .digest('hex');
 
-    if (hash !== req.headers['x-paystack-signature']) {
+    if (hash !== req.headers[PAYSTACK_SIGNATURE_HEADER]) {
       return res.status(400).json({ message: 'Invalid signature' });
     }
 
@@ -133,7 +138,8 @@ const handleWebHook = async (req, res) => {
 
     const amount = data.data.amount;
     const email = data.data.customer.email;
-    const reference = data.data.reference;  // Assuming this is the payment reference
+    const reference = data.data.reference;
+    const alert_type = "CREDIT"
 
     // Find the user by email
     const user = await User.findOne({ email });
@@ -160,7 +166,19 @@ const handleWebHook = async (req, res) => {
     wallet.paymentReference.push(reference);
 
     // Save the updated wallet
-    wallet = await wallet.save();
+    await wallet.save();
+
+    // Create a new transaction history entry
+    await handleNotification (email,amount,alert_type)
+    const transactionHistory = new TransactionHistory({
+      userId: user._id,
+      amount,
+      transactionType: alert_type,
+      paymentReference: reference,
+      narration: "WEB TRANSACTION FROM PAYSTACK"
+    });
+
+    await transactionHistory.save();
 
     res.status(200).json(wallet);
   } catch (error) {
@@ -168,6 +186,7 @@ const handleWebHook = async (req, res) => {
     res.status(500).json({ message: 'Server error during payment verification', error: error.message });
   }
 };
+
 
 
 

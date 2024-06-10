@@ -1,7 +1,7 @@
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const {User, Loan, Savings} = require('../models/model');
+const {User, Loan, Savings, TransactionHistory } = require('../models/model');
 
 const { 
   emailValidation,
@@ -46,9 +46,10 @@ const registerUser = async (req, res) => {
     // Save user to database
     const savedUser = await newUser.save();
 
-    // Create savings info for the new user
-    const userInfo = new Savings({ userId: savedUser._id });
-    await userInfo.save();
+    // Create savings info for the new user TransactionHistory
+    const savings = new Savings({ userId: savedUser._id });
+    await savings.save();
+    
 
     // Respond with the saved user info
     return res.status(200).json({ data: "Registeration Successful" });
@@ -114,8 +115,9 @@ const getDashboardDetails = async (req, res) => {
     const user = await User.findOne({ _id: userId })
     const loans = await Loan.find({ userId });
     const savings = await Savings.find({ userId });
+    const transaction = await TransactionHistory.find({ userId });
 
-    res.status(200).json({ user: user , loans, savings});
+    res.status(200).json({ user: user , loans, savings,transaction});
   } catch (err) {
     console.error(err);
     res.status(500).send('Server Error');

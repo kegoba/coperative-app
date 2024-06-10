@@ -39,8 +39,20 @@ const savingsSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-//  user: { type: Schema.Types.ObjectId, ref: 'User' }
 
+
+const transactionSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  amount: { type: Number, default : 0},
+  transactionType: { type: String, require:true },
+  narration: { type: String },
+  date: { type: Date, default: Date.now },
+  paymentReference: {
+    type: String ,// Array of strings
+  },
+}, { timestamps: true });
+
+//  user: { type: Schema.Types.ObjectId, ref: 'User' }
 
 
 
@@ -49,6 +61,7 @@ const savingsSchema = new mongoose.Schema({
 const Savings = mongoose.model('Savings', savingsSchema);
 
 const Loan = mongoose.model('Loan', loanSchema);
+const TransactionHistory = mongoose.model('TransactionHistory', transactionSchema);
 
 const User = mongoose.model('User', UserSchema);
 
@@ -56,6 +69,7 @@ module.exports = {
   User,
   Loan,
   Savings,
+  TransactionHistory,
 
 
 }
