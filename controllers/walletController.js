@@ -70,7 +70,8 @@ const fundWallet = async (req, res)=>{
 const verifyAndCredit = async (req,res)=>{
   const { reference} = req.body;
   const data = await  verifyPayment (reference)
-  const amount= data.data.amount
+  const paystckAmount= data.data.amount  
+  const amount = paystckAmount/100
   const email =  data.data.customer.email
 
   try {
@@ -87,7 +88,7 @@ const verifyAndCredit = async (req,res)=>{
     }
 
     // Update the wallet balance
-    wallet.balance += amount / 100;
+    wallet.balance += amount 
     // Ensure paymentReference is initialized
     if (!Array.isArray(wallet.paymentReference)) {
       wallet.paymentReference = [];
@@ -139,7 +140,7 @@ const handleWebHook = async (req, res) => {
     const amount = data.data.amount;
     const email = data.data.customer.email;
     const reference = data.data.reference;
-    const alert_type = "CREDIT"
+    const alert_type = "CREDIT ALERT"
 
     // Find the user by email
     const user = await User.findOne({ email });
