@@ -14,8 +14,10 @@ const UserSchema = mongoose.Schema({
 
 const loanSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  amount: { type: Number, required: true },
-  interest: { type: Number, required: true },
+  amountBorrowed: { type: Number, required: true },
+  monthlyReturn: { type: Number, required: true },
+  totalAmountToBePaid: { type: Number, required: true },
+  totalInterest: { type: Number, required: true },
   duration: { type: Number, required: true },
   date: { type: Date, default: Date.now }, // Duration in months
   loanReference : {
@@ -37,7 +39,7 @@ const savingsSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-
+//  user: { type: Schema.Types.ObjectId, ref: 'User' }
 
 
 

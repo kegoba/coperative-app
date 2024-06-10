@@ -9,14 +9,8 @@ const userController = require('../controllers/user')
 
 route.post('/register',  userController.registerUser)
 route.post('/login', userController.loginUser) 
-route.get('/getsingleuser/:id', checkAuthentication, userController.getSingleUser)  
+route.get('/dashboard', checkAuthentication, userController.getDashboardDetails)  
 route.post('/loanrequest', checkAuthentication, userController.createLoanRequest)
-
-
-
-
-
-
 
 
 

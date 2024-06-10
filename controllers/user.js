@@ -105,24 +105,29 @@ const loginUser = async (req, res) => {
 };
 
 //get Single user
-const getSingleUser = async (req, res) => {
-  try{
-    const user = await User.findById({_id:req.params.id})//.populate("consultationId")
-
-    res.status(200).json({data : user});
-
-  } catch(error){
-    res.status(400).json({message: error.errors})
+const getDashboardDetails = async (req, res) => {
+  const userId = req.user.id;
+  if (!userId){
+    res.status(400).json({data : "User Not Found"})
   }
-  
-}
+  try {
+    const user = await User.findOne({ _id: userId })
+    const loans = await Loan.find({ userId });
+    const savings = await Savings.find({ userId });
+
+    res.status(200).json({ user: user , loans, savings});
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error');
+  }
+};
 
 
 const createLoanRequest = async (req, res) => {
-  console.log(req.user.id)
+  console.log(req.body)
   try {
-    const { amount, interest, duration , loanReference } = req.body;
-    const loan = new Loan({ userId : req.user.id, amount, interest, duration,loanReference });
+    const { amountBorrowed, totalAmountToBePaid, totalInterest, duration , monthlyReturn, loanReference } = req.body;
+    const loan = new Loan({ userId : req.user.id, monthlyReturn, amountBorrowed, totalAmountToBePaid, totalInterest, duration,loanReference });
      await loan.save();
     res.status(200).json(loan);
   } catch (error) {
@@ -131,9 +136,11 @@ const createLoanRequest = async (req, res) => {
 };
 
 
+
+
 module.exports = {
   registerUser,
   loginUser,
-  getSingleUser,
+  getDashboardDetails,
   createLoanRequest
 }
