@@ -9,23 +9,30 @@ const bodyParser = require('body-parser');
 require("dotenv").config();
 
 const app = express();
-const allowedOrigins = ['http://localhost:3000', "https://coperativeapp.onrender.com/"];
+const allowedOrigins = ['https://coperativeapp.onrender.com', 'http://localhost:3000'];
 
-// Custom CORS middleware
-const customCorsMiddleware = (req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  // Handle pre-flight requests
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      // If the origin is in the allowedOrigins list, allow the request
+      return callback(null, true);
+    } else {
+      // If the origin is not in the list, deny the request
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  allowedHeaders: 'Content-Type, Authorization'
 };
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
+
 
 app.use(customCorsMiddleware);
 app.use(bodyParser.json());
