@@ -59,13 +59,18 @@ app.use("/api/v1/admin", require("./routes/adminRoute"));
 
 // SWAGGER
 app.use("/docs", swaggerUI.serve, swaggerUI.setup(swaggerSpec));
-
+app.use(express.static('./build'));
 app.get("/", async (req, res) => {
   res
     .status(200)
     .json({
       message: `Welcome to Our amazing pet store; Explore our API docs at http://localhost:${PORT}/docs`
     });
+});
+
+
+app.get('/*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
 
