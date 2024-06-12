@@ -9,7 +9,7 @@ const bodyParser = require('body-parser');
 require("dotenv").config();
 
 const app = express();
-const allowedOrigins = ['http://localhost:3000', "https://coperative.onrender.com/api/v1"];
+const allowedOrigins = ['http://localhost:3000', "https://coperativeapp.onrender.com/"];
 
 // Custom CORS middleware
 const customCorsMiddleware = (req, res, next) => {
