@@ -34,7 +34,7 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 
-app.use(customCorsMiddleware);
+
 app.use(bodyParser.json());
 //app.use(bodyParser.urlencoded({ extended: true }));
 
