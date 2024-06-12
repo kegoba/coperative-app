@@ -137,7 +137,7 @@ const handleWebHook = async (req, res) => {
       return res.status(400).json({ message: 'Payment was not successful' });
     }
 
-    const amount = data.data.amount;
+    const amount = data.data.amount / 100;
     const email = data.data.customer.email;
     const reference = data.data.reference;
     const alert_type = "CREDIT ALERT"
@@ -163,7 +163,7 @@ const handleWebHook = async (req, res) => {
     }
 
     // Update the wallet balance and add the payment reference
-    wallet.balance += amount / 100;
+    wallet.balance += amount ;
     wallet.paymentReference.push(reference);
 
     // Save the updated wallet
