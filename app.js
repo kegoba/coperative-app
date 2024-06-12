@@ -9,8 +9,25 @@ const bodyParser = require('body-parser');
 require("dotenv").config();
 
 const app = express();
-app.options('*', cors());
+const allowedOrigins = ['http://localhost:3000', "https://coperative.onrender.com/api/v1"];
 
+// Custom CORS middleware
+const customCorsMiddleware = (req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // Handle pre-flight requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+};
+
+app.use(customCorsMiddleware);
 app.use(bodyParser.json());
 //app.use(bodyParser.urlencoded({ extended: true }));
 
