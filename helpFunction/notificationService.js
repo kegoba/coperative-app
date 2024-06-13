@@ -30,9 +30,39 @@ const handleNotification = async (email, amount,alert_type) => {
 };
 
 
-    
+const handlePasswordNotification = async (email, link) => {
+  try {
+    const courier = new CourierClient({ 
+      authorizationToken: process.env.EMAIL_KEY
+    });
 
-module.exports = { handleNotification };
+    const requestId = await courier.send({
+      message: {
+        content: {
+          title: `Password Reset`,
+          body: `Please click on the following link to reset your password:${link}`
+        },
+        to: {
+          email: email
+        }
+      }
+    });
+
+    // If successful, return 200
+    return 200;
+
+  } catch (err) {
+    // If an error occurs, return 400
+    return 400;
+  }
+};
+
+
+   
+
+
+
+module.exports = { handleNotification , handlePasswordNotification};
   
      
 

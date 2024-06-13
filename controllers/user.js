@@ -1,8 +1,10 @@
 
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const {User, Loan, Savings, TransactionHistory } = require('../models/model');
+const crypto = require('crypto');
 
+const jwt = require('jsonwebtoken');
+const {User, Loan, Savings, TransactionHistory, PasswordReset } = require('../models/model');
+const {handlePasswordNotification} = require("../helpFunction/notificationService")
 const { 
   emailValidation,
   passwordValidation,
@@ -105,6 +107,69 @@ const loginUser = async (req, res) => {
   }
 };
 
+
+
+const forGotPassword =   async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).send('User not found');
+    }
+    
+    const token = crypto.randomBytes(20).toString('hex');
+    const expires = Date.now() + 3600000; // Token expires in 1 hour
+    
+    const resetToken = new PasswordReset({
+      user: user._id,
+      token: token,
+      expires: expires
+    });
+
+    await resetToken.save();
+
+    const link = `https://coperativeapp.onrender.com/reset-password/${token}`
+
+    const sendLink = await handlePasswordNotification(email,link)
+    if (!sendLink){
+      res.status(400).json({data :'Link Was Not Sent'});
+    }
+    res.status(200).json({data : 'Password reset link sent to your email', link});
+  } catch (error) {
+    console.error('Error initiating password reset:', error);
+    res.status(500).send('Internal Server Error');
+  }
+};
+
+// Route for resetting password
+const reSetPassword =  async (req, res) => {
+  console.log(req.body)
+  try {
+    const { token, newPassword } = req.body;
+    const resetToken = await PasswordReset.findOne({ token, expires: { $gt: Date.now() } });
+    console.log(resetToken)
+    if (!resetToken) {
+      return res.status(400).send('Invalid or expired token');
+    }
+    
+    const user = await User.findById(resetToken.user);
+    if (!user) {
+      return res.status(404).send('User not found');
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    // Delete the reset password token
+    await resetToken.deleteOne({ _id: resetToken._id });
+
+    res.status(200).send('Password reset successfully');
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).send('Internal Server Error');
+  }
+};
+
 //get Single user
 const getDashboardDetails = async (req, res) => {
   const userId = req.user.id;
@@ -144,5 +209,7 @@ module.exports = {
   registerUser,
   loginUser,
   getDashboardDetails,
-  createLoanRequest
+  createLoanRequest,
+  forGotPassword,
+  reSetPassword
 }

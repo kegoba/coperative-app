@@ -56,7 +56,24 @@ const transactionSchema = new mongoose.Schema({
 
 
 
+const resetPasswordTokenSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  token: {
+    type: String,
+    required: true
+  },
+  expires: {
+    type: Date,
+    required: true,
+    default: Date.now() + 3600000 // Token expires in 1 hour
+  }
+});
 
+const PasswordReset = mongoose.model('PasswordReset', resetPasswordTokenSchema);
 
 const Savings = mongoose.model('Savings', savingsSchema);
 
@@ -70,6 +87,8 @@ module.exports = {
   Loan,
   Savings,
   TransactionHistory,
+  PasswordReset,
+  
 
 
 }
