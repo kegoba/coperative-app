@@ -11,8 +11,11 @@ route.post('/register',  userController.registerUser)
 route.post('/login', userController.loginUser) 
 route.get('/dashboard', checkAuthentication, userController.getDashboardDetails)  
 route.post('/loanrequest', checkAuthentication, userController.createLoanRequest)
+route.post('/change-password',  checkAuthentication, userController.changePassword) 
+route.post('/getuserbyphone',  checkAuthentication, userController.getDetailByPhone) 
 route.post('/forgot-password',   userController.forGotPassword)  
-route.post('/reset-password',   userController.reSetPassword)
+route.post('/reset-password',   userController.reSetPassword) //
+
 
 
 

@@ -23,8 +23,8 @@
   }
 
   const  validateAmount = (amount)=> {
-    const regex = /^\d+$/ ;
-    return regex.test(input);
+   
+    return (typeof amount !== 'number' || isNaN(amount) || amount < 100);
   }
 
 

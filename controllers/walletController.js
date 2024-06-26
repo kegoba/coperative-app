@@ -3,14 +3,20 @@ const {User,Savings,TransactionHistory} = require('../models/model');
 const { acceptPayment , verifyPayment} = require("../services/paymentService")
 const {handleNotification} = require("../helpFunction/notificationService")
 const crypto = require('crypto');
- 
+const { 
+  phoneValidation,
+  validateAmount,
+} = require("../helpFunction/validationService");
+const { messages } = require('@trycourier/courier/api');
+
+
+const {generateReferenceNumber} = require("../helpFunction/reuseables")
 
 
 
 
 // Get wallet balance
 const getWalletBalance = async (req, res) => {
-  console.log(req.user.id)
   try {
     const wallet = await Savings.findOne({ userId: req.user.id });
     
@@ -25,14 +31,85 @@ const getWalletBalance = async (req, res) => {
   }
 };
 
-// Update wallet balance
+
+
+
+const walletToWalletTransfer = async (req, res) => {
+  const referenceNumber = generateReferenceNumber()
+  const { narration, amount, beneficiaryId } = req.body;
+
+  // Validate amount
+  if (validateAmount(amount)) {
+    return res.status(400).json({ message: "Invalid Input" });
+  }
+
+  try {
+    // Find the user's wallet
+    const userWallet = await Savings.findOne({ userId: req.user.id });
+    if (!userWallet) {
+      return res.status(404).json({ message: 'Your Wallet is not found' });
+    }
+
+    // Find the beneficiary's wallet
+    const beneficiaryWallet = await Savings.findOne({ userId: beneficiaryId });
+    if (!beneficiaryWallet) {
+      return res.status(404).json({ message: 'Beneficiary Wallet is not found' });
+    }
+
+    // Check if the user has sufficient balance
+    if (userWallet.balance < amount) {
+      return res.status(400).json({ message: 'Insufficient Wallet' });
+    }
+
+    // Perform the transfer update
+    userWallet.balance -= amount;
+    beneficiaryWallet.balance += amount;
+
+    await userWallet.save();
+    await beneficiaryWallet.save();
+
+    // Create transaction history for the user
+    const senderTransactionHistory = new TransactionHistory({
+      userId: req.user.id,
+      amount,
+      transactionType: 'Debit',
+      paymentReference: referenceNumber, 
+      narration: narration
+    });
+
+    await senderTransactionHistory.save();
+
+    // Create transaction history for the beneficiary
+    const beneficiaryTransactbeionHistory = new TransactionHistory({
+      userId: beneficiaryId,
+      amount,
+      transactionType: 'Credit',
+      paymentReference: referenceNumber, 
+      narration: narration
+    });
+
+    await beneficiaryTransactbeionHistory.save();
+
+    // Respond with success
+    res.status(200).json({ message: "Transaction Successful" });
+
+  } catch (error) {
+    console.error('Error updating wallet balance:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+
+// Update wallet balance  
 const creditWallet = async (req, res) => {
   const amount = req.body.amount
   if (typeof amount !== 'number' || isNaN(amount) || amount < 100) {
-    return res.status(400).json({ data: "Invalid Amount" });
+    return res.status(400).json({ message: "Invalid Amount" });
   }
   try {
-    const wallet = await Savings.findOne({ user: userId });
+    const wallet = await Savings.findOne({ userId: req.user.id });
+    console.log(wallet)
     if (!wallet) {
       return res.status(404).json({ message: 'Wallet not found' });
     }
@@ -42,7 +119,7 @@ const creditWallet = async (req, res) => {
 
     res.status(200).json(wallet);
   } catch (error) {
-    console.error('Error updating wallet balance:', error);
+   
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -52,7 +129,7 @@ const creditWallet = async (req, res) => {
 const fundWallet = async (req, res)=>{
     const { amount} = req.body
     if (typeof amount !== 'number' || isNaN(amount) || amount < 100) {
-      return res.status(400).json({ data: "Invalid Amount" });
+      return res.status(400).json({ message: "Invalid Amount" });
     }
     await acceptPayment(req.user.email, amount)
     .then((response)=>{
@@ -196,6 +273,7 @@ module.exports = {
     verifyAndCredit,
     getWalletBalance,
     creditWallet,
+    walletToWalletTransfer,
     handleWebHook,
 }
 

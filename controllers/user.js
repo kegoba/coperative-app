@@ -11,7 +11,8 @@ const {
   inputValidation,
   phoneValidation,
   validateAmount,
-} = require("../helpFunction/validationService")
+} = require("../helpFunction/validationService");
+const { messages } = require('@trycourier/courier/api');
 
 
 
@@ -31,7 +32,7 @@ const registerUser = async (req, res) => {
     // Check if user already exists by email or phone
     const userExist = await User.findOne({ $or: [{ email: email }, { phone: phone }] });
     if (userExist) {
-      return res.status(400).json({ data: "Email or Phone Exists" });
+      return res.status(400).json({ message: "Email or Phone Exists" });
     }
 
     // Hash password
@@ -56,9 +57,12 @@ const registerUser = async (req, res) => {
     // Respond with the saved user info
     return res.status(200).json({ data: "Registeration Successful" });
   } catch (error) {
-    return res.status(500).json({ data: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
+
+
+
 
 
 
@@ -75,7 +79,7 @@ const loginUser = async (req, res) => {
     // Find the user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message: 'Invalid Email or Password' });
+      return res.status(401).json({ message: 'User Does Not Exist' });
     }
 
     // Compare the provided password with the stored hashed password
@@ -93,6 +97,7 @@ const loginUser = async (req, res) => {
     // Respond with user data and token
     const data = {
       token,
+      phone : user.phone,
       name: user.name,
       email: user.email,
       id: user._id,
@@ -102,10 +107,12 @@ const loginUser = async (req, res) => {
 
     res.status(200).json({ data });
   } catch (error) {
-    console.error('Error logging in user:', error);
     res.status(500).json({ message: 'Server error during login', error: error.message });
   }
 };
+
+
+
 
 
 
@@ -114,7 +121,7 @@ const forGotPassword =   async (req, res) => {
     const { email } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).send('User not found');
+      return res.status(404).send({message : 'User not found'});
     }
     
     const token = crypto.randomBytes(20).toString('hex');
@@ -136,25 +143,27 @@ const forGotPassword =   async (req, res) => {
     }
     res.status(200).json({data : 'Password reset link sent to your email', link});
   } catch (error) {
-    console.error('Error initiating password reset:', error);
-    res.status(500).send('Internal Server Error');
+    res.status(500).json({message: 'Internal Server Error'});
   }
 };
 
-// Route for resetting password
+
+
+
+
+
 const reSetPassword =  async (req, res) => {
-  console.log(req.body)
   try {
     const { token, newPassword } = req.body;
     const resetToken = await PasswordReset.findOne({ token, expires: { $gt: Date.now() } });
     console.log(resetToken)
     if (!resetToken) {
-      return res.status(400).send('Invalid or expired token');
+      return res.status(400).json({message: 'Invalid or expired token'});
     }
     
     const user = await User.findById(resetToken.user);
     if (!user) {
-      return res.status(404).send('User not found');
+      return res.status(404).json({message: 'User not found'});
     }
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
@@ -163,12 +172,58 @@ const reSetPassword =  async (req, res) => {
     // Delete the reset password token
     await resetToken.deleteOne({ _id: resetToken._id });
 
-    res.status(200).send('Password reset successfully');
+    res.status(200).json({data:'Password reset successfully'});
   } catch (error) {
-    console.error('Error resetting password:', error);
-    res.status(500).send('Internal Server Error');
+ 
+    res.status(500).json({message : 'Internal Server Error'});
   }
 };
+
+
+
+
+
+
+
+const changePassword =  async (req, res) => {
+
+  const {oldPassword, newPassword } = req.body;
+  console.log(req.user, req.user)
+  // Validate inputs
+  if (!passwordValidation(newPassword)) {
+    return res.status(400).json({ message: "Invalid Input" });
+  }
+
+  try {
+    // Find the user by email
+    const user = await User.findOne({email : req.user.email });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid user' });
+    }
+
+    // Compare the provided password with the stored hashed password
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid Old Password' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword
+    await user.save();
+    // Populate the wallet information
+    // Respond with user data and token
+   
+
+    res.status(200).json({ data : "Password Saved Successfully" });
+  } catch (error) {
+    console.error('message:', error);
+    res.status(500).json({ message: 'Server error during login', error: error.message });
+  }
+  
+};
+
+
+
 
 //get Single user
 const getDashboardDetails = async (req, res) => {
@@ -190,15 +245,39 @@ const getDashboardDetails = async (req, res) => {
 };
 
 
+
+const getDetailByPhone = async (req, res) => {
+  if ( !phoneValidation(req.body.phone)) {
+    return res.status(400).json({ message: "Invalid Phone Number" });
+  }
+  const{phone} = req.body
+  if (!phone){
+    res.status(400).json({message : "Invalid Phone Number"})
+  }
+  try {
+    const user = await User.findOne({ phone: phone })
+    if (!user){
+      res.status(400).json({message : "Phone Number Not Found"})
+    }else{
+      res.status(200).json({ name: user.name, id : user._id});
+    }
+   
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({message: 'Error When Fetching Data'});
+  }
+};
+
+
+
 const createLoanRequest = async (req, res) => {
-  console.log(req.body)
   try {
     const { amountBorrowed, totalAmountToBePaid, totalInterest, duration , monthlyReturn, loanReference } = req.body;
     const loan = new Loan({ userId : req.user.id, monthlyReturn, amountBorrowed, totalAmountToBePaid, totalInterest, duration,loanReference });
      await loan.save();
     res.status(200).json(loan);
   } catch (error) {
-    res.status(400).json({ error: 'Error creating loan request' });
+    res.status(400).json({ message : 'Error creating loan request' });
   }
 };
 
@@ -211,5 +290,7 @@ module.exports = {
   getDashboardDetails,
   createLoanRequest,
   forGotPassword,
-  reSetPassword
+  reSetPassword,
+  changePassword,
+  getDetailByPhone,
 }
