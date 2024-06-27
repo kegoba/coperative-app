@@ -53,7 +53,7 @@ app.use("/api/v1/wallet", require("./routes/walletRoute"));
 
 app.use("/api/v1/admin", require("./routes/adminRoute"));
 
-//app.use("/api/v1", require("./routes/consultationRoute"));
+app.use("/api/v1/loan", require("./routes/loanRoute"));
 
 
 

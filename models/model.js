@@ -28,7 +28,7 @@ const loanSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 
-const savingsSchema = new mongoose.Schema({
+const walletSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   balance: { type: Number, default : 0},
   interest: { type: Number, default : 0 },
@@ -41,7 +41,7 @@ const savingsSchema = new mongoose.Schema({
 
 
 
-const fixedSavingsSchema = new mongoose.Schema({
+const fixedSavingSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   fixedAmount: { type: Number, default : 0},
   totalAmountToBePaid: { type: Number, default : 0 },
@@ -88,11 +88,11 @@ const resetPasswordTokenSchema = new mongoose.Schema({
 
 const PasswordReset = mongoose.model('PasswordReset', resetPasswordTokenSchema);
 
-const Savings = mongoose.model('Savings', savingsSchema);
+const Wallet = mongoose.model('Wallet', walletSchema);
 
 const Loan = mongoose.model('Loan', loanSchema); //
 
-const fixedSaving = mongoose.model('fixedSaving', fixedSavingsSchema);
+const fixedSaving = mongoose.model('fixedSaving', fixedSavingSchema);
 
 const TransactionHistory = mongoose.model('TransactionHistory', transactionSchema);
 
@@ -101,7 +101,7 @@ const User = mongoose.model('User', UserSchema);
 module.exports = {
   User,
   Loan,
-  Savings,
+  Wallet,
   fixedSaving,
   TransactionHistory,
   PasswordReset,

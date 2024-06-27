@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const {User,Savings,TransactionHistory} = require('../models/model');
+const {User,Wallet,TransactionHistory} = require('../models/model');
 const { acceptPayment , verifyPayment} = require("../services/paymentService")
 const {handleNotification} = require("../helpFunction/notificationService")
 const crypto = require('crypto');
@@ -18,7 +18,7 @@ const {generateReferenceNumber} = require("../helpFunction/reuseables")
 // Get wallet balance
 const getWalletBalance = async (req, res) => {
   try {
-    const wallet = await Savings.findOne({ userId: req.user.id });
+    const wallet = await Wallet.findOne({ userId: req.user.id });
     
     if (!wallet) {
       return res.status(404).json({ message: 'Wallet not found' });
@@ -45,13 +45,13 @@ const walletToWalletTransfer = async (req, res) => {
 
   try {
     // Find the user's wallet
-    const userWallet = await Savings.findOne({ userId: req.user.id });
+    const userWallet = await Wallet.findOne({ userId: req.user.id });
     if (!userWallet) {
       return res.status(404).json({ message: 'Your Wallet is not found' });
     }
 
     // Find the beneficiary's wallet
-    const beneficiaryWallet = await Savings.findOne({ userId: beneficiaryId });
+    const beneficiaryWallet = await Wallet.findOne({ userId: beneficiaryId });
     if (!beneficiaryWallet) {
       return res.status(404).json({ message: 'Beneficiary Wallet is not found' });
     }
@@ -103,19 +103,29 @@ const walletToWalletTransfer = async (req, res) => {
 
 // Update wallet balance  
 const creditWallet = async (req, res) => {
+  const referenceNumber = generateReferenceNumber()
   const amount = req.body.amount
   if (typeof amount !== 'number' || isNaN(amount) || amount < 100) {
     return res.status(400).json({ message: "Invalid Amount" });
   }
   try {
-    const wallet = await Savings.findOne({ userId: req.user.id });
-    console.log(wallet)
+    const wallet = await Wallet.findOne({ userId: req.user.id });
     if (!wallet) {
       return res.status(404).json({ message: 'Wallet not found' });
     }
 
     wallet.balance += amount;
+    wallet.paymentReference = referenceNumber
     await wallet.save();
+    const transactionHistory = new TransactionHistory({
+      userId: req.user.id,
+      amount,
+      transactionType: "Credit",
+      paymentReference: referenceNumber,
+      narration: "manual credit"
+    });
+
+    await transactionHistory.save();
 
     res.status(200).json(wallet);
   } catch (error) {
@@ -159,7 +169,7 @@ const verifyAndCredit = async (req,res)=>{
     }
 
     // Find the wallet associated with the user
-    let wallet = await Savings.findOne({ userId: user._id });
+    let wallet = await Wallet.findOne({ userId: user._id });
     if (!wallet) {
       return res.status(404).json({ message: 'Wallet not found' });
     }
@@ -226,7 +236,7 @@ const handleWebHook = async (req, res) => {
     }
 
     // Find the wallet associated with the user
-    let wallet = await Savings.findOne({ userId: user._id });
+    let wallet = await Wallet.findOne({ userId: user._id });
     if (!wallet) {
       return res.status(404).json({ message: 'Wallet not found' });
     }

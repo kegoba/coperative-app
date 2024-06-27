@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
 const jwt = require('jsonwebtoken');
-const {User, Loan, Savings, TransactionHistory, PasswordReset } = require('../models/model');
+const {User, Loan, Wallet, TransactionHistory, PasswordReset } = require('../models/model');
 const {handlePasswordNotification} = require("../helpFunction/notificationService")
 const { 
   emailValidation,
@@ -49,9 +49,9 @@ const registerUser = async (req, res) => {
     // Save user to database
     const savedUser = await newUser.save();
 
-    // Create savings info for the new user TransactionHistory
-    const savings = new Savings({ userId: savedUser._id });
-    await savings.save();
+    // Create Wallet info for the new user TransactionHistory
+    const wallet = new Wallet({ userId: savedUser._id });
+    await wallet.save();
     
 
     // Respond with the saved user info
@@ -92,7 +92,7 @@ const loginUser = async (req, res) => {
     const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
     // Populate the wallet information
-    const wallet = await Savings.findOne({ userId: user._id });
+    const wallet = await Wallet.findOne({ userId: user._id });
 
     // Respond with user data and token
     const data = {
@@ -234,10 +234,10 @@ const getDashboardDetails = async (req, res) => {
   try {
     const user = await User.findOne({ _id: userId })
     const loans = await Loan.find({ userId });
-    const savings = await Savings.find({ userId });
+    const wallet = await Wallet.find({ userId });
     const transaction = await TransactionHistory.find({ userId });
 
-    res.status(200).json({ user: user , loans, savings,transaction});
+    res.status(200).json({ user: user , loans, wallet,transaction});
   } catch (err) {
     console.error(err);
     res.status(500).send('Server Error');
@@ -270,16 +270,6 @@ const getDetailByPhone = async (req, res) => {
 
 
 
-const createLoanRequest = async (req, res) => {
-  try {
-    const { amountBorrowed, totalAmountToBePaid, totalInterest, duration , monthlyReturn, loanReference } = req.body;
-    const loan = new Loan({ userId : req.user.id, monthlyReturn, amountBorrowed, totalAmountToBePaid, totalInterest, duration,loanReference });
-     await loan.save();
-    res.status(200).json(loan);
-  } catch (error) {
-    res.status(400).json({ message : 'Error creating loan request' });
-  }
-};
 
 
 
@@ -288,7 +278,6 @@ module.exports = {
   registerUser,
   loginUser,
   getDashboardDetails,
-  createLoanRequest,
   forGotPassword,
   reSetPassword,
   changePassword,
