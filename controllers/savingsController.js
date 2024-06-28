@@ -1,44 +1,63 @@
-const {Savings, InterestEarned } = require('../models/model');
+const { messages } = require('@trycourier/courier/api');
+const {Savings, InterestEarned, FixedSaving, Wallet, TransactionHistory } = require('../models/model');
+const {validateAmount} = require("../helpFunction/validationService")
+const {generateReferenceNumber} = require("../helpFunction/reuseables")
 
 
-const createSavings = async (req, res) => {
-  try {
-    const { userId, amount, interestRate } = req.body;
-    const savings = new Savings({ userId, amount, interestRate });
-    await savings.save();
-    res.status(201).json(savings);
-  } catch (error) {
-    res.status(400).json({ error: 'Error creating savings' });
+
+
+
+
+
+const createFixedSavings = async (req, res) => {
+  const paymentReference = generateReferenceNumber()
+  const { amount,duration,monthlyReturn,totalAmountToBePaid ,totalInterest } = req.body;
+  const userId = req.user.id
+  if((validateAmount(amount)) ||  validateAmount(monthlyReturn) ||validateAmount(totalAmountToBePaid)||validateAmount(totalInterest) ){
+    return res.status(400).json({ message: 'Invalid Input' });
   }
-};
 
-
-
-const calculateInterestEarned = async (req, res) => {
+  if (!userId){
+    return res.status(401).json({ message: 'Login Required' });
+    
+  }
+  
   try {
-    const { savingsId } = req.body;
-    const savings = await Savings.findById(savingsId);
-    if (!savings) {
-      return res.status(404).json({ error: 'Savings not found' });
+    const wallet = await Wallet.findOne({userId: userId})
+
+    if (wallet.balance < amount){
+      return res.status(400).json({ message: 'Insufficient Wallet' });
     }
-    const interestRate = savings.interestRate / 100;
-    const interestEarned = savings.amount * interestRate;
-    const interestEntry = new InterestEarned({ 
-                            userId: savings.userId, 
-                            amount: interestEarned,
-                            savingsId: savings._id 
-                        });
-    await interestEntry.save();
-    res.json({ interestEarned });
+   
+    
+    const fixedsaving = new FixedSaving({ 
+      userId, fixedAmount : amount, duration,totalInterest,
+      monthlyReturn, totalAmountToBePaid, paymentReference
+    });
+    const transactionHistory = new TransactionHistory({
+      userId,
+      amount,
+      transactionType: "Debit",
+      paymentReference: paymentReference,
+      narration: "Fixed Deposit Investment"
+    });
+
+    wallet.balance -= amount
+    await wallet.save()
+    await fixedsaving.save();
+    await transactionHistory.save()
+    return res.status(201).json(fixedsaving);
   } catch (error) {
-    res.status(400).json({ error: 'Error calculating interest' });
+    return res.status(400).json({ error: 'Error creating savings' });
   }
 };
+
+
 
 
 
 module.exports = {
-    createSavings,
-    calculateInterestEarned
+    
+    createFixedSavings
 
 }

@@ -55,6 +55,8 @@ app.use("/api/v1/admin", require("./routes/adminRoute"));
 
 app.use("/api/v1/loan", require("./routes/loanRoute"));
 
+app.use("/api/v1/saving", require("./routes/savingRoute"));
+
 
 
 // SWAGGER
