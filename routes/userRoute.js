@@ -1,6 +1,6 @@
 const route = require('express').Router()
 const {checkAuthentication} = require('../middlewares/authenticate');
-const userController = require('../controllers/user')
+const userController = require('../controllers/userController')
 //const loanController = require('../controllers/loanController')
 
 

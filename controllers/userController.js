@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
 const jwt = require('jsonwebtoken');
-const {User, Loan, Wallet, TransactionHistory, PasswordReset } = require('../models/model');
+const {User, Loan, Wallet, TransactionHistory, PasswordReset, FixedSaving } = require('../models/model');
 const {handlePasswordNotification} = require("../helpFunction/notificationService")
 const { 
   emailValidation,
@@ -232,17 +232,23 @@ const getDashboardDetails = async (req, res) => {
     res.status(400).json({data : "User Not Found"})
   }
   try {
-    const user = await User.findOne({ _id: userId })
-    const loans = await Loan.find({ userId });
-    const wallet = await Wallet.find({ userId });
-    const transaction = await TransactionHistory.find({ userId });
+    const user = await User.findOne({ _id: userId }).lean();
+    const [loans, wallet, transaction, fixedsaving] = await Promise.all([
+      Loan.find({ userId }).lean(),
+      Wallet.find({ userId }).lean(),
+      TransactionHistory.find({ userId }).lean(),
+      FixedSaving.find({ userId }).lean()
+    ]);
 
-    res.status(200).json({ user: user , loans, wallet,transaction});
+
+    res.status(200).json({ user: user , loans, wallet,transaction, fixedsaving});
   } catch (err) {
     console.error(err);
     res.status(500).send('Server Error');
   }
 };
+
+
 
 
 
